@@ -40,8 +40,10 @@ TIMEZONE=Europe/Warsaw
 Railway automatycznie:
 - Wykryje PHP projekt
 - Zbuduje używając konfiguracji z `nixpacks.toml`
-- Uruchomi Nginx + PHP-FPM
+- Uruchomi PHP built-in server z router.php
 - Wdroży aplikację
+
+**Uwaga:** Aplikacja używa PHP built-in server z custom routerem dla uproszczenia deploymentu.
 
 ### 5. Po deployment
 
@@ -62,15 +64,21 @@ W Railway Dashboard → Settings → Domains:
 - Sprawdź logi: `railway logs --tail 100`
 - Upewnij się że zmienne środowiskowe są ustawione
 - Sprawdź czy CORS origin zawiera domenę Railway
+- Sprawdź czy backend/.env istnieje (Railway używa zmiennych środowiskowych)
 
 **Problem:** Frontend nie ładuje się
-- Sprawdź czy PORT jest poprawnie ustawiony w nginx.conf
+- Sprawdź logi deploymentu
+- Upewnij się że router.php działa poprawnie
 - Railway automatycznie ustawia zmienną `PORT`
 
 **Problem:** Brak połączenia z Traccar
 - Sprawdź credentials w zmiennych środowiskowych
 - Upewnij się że Traccar URL jest poprawny
 - Sprawdź timeout (zwiększ `CURL_TIMEOUT` jeśli potrzeba)
+
+**Problem:** Ikony SVG nie ładują się
+- Upewnij się że router.php poprawnie obsługuje /frontend/assets/
+- Sprawdź MIME types w router.php
 
 ### 8. Monitorowanie
 
@@ -91,10 +99,11 @@ Railway oferuje:
 
 ## Pliki konfiguracyjne Railway
 
-- `nixpacks.toml` - Konfiguracja buildu (PHP 8.2, Nginx)
-- `nginx.conf` - Konfiguracja serwera web
+- `nixpacks.toml` - Konfiguracja buildu (PHP 8.2 z rozszerzeniami)
+- `router.php` - Custom router dla PHP built-in server
 - `railway.json` - Ustawienia deployment
 - `.env.example` - Przykład zmiennych środowiskowych
+- `nginx.conf` - (opcjonalny) Konfiguracja Nginx dla bardziej zaawansowanych deploymentów
 
 ## Uwagi bezpieczeństwa
 

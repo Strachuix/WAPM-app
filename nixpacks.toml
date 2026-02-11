@@ -1,8 +1,9 @@
 [phases.setup]
-nixPkgs = ["php82", "php82Packages.composer", "nginx"]
+nixPkgs = ["php82", "php82Extensions.curl", "php82Extensions.mbstring", "php82Extensions.openssl"]
+
+[phases.install]
 
 [phases.build]
-cmds = ["echo 'No build step required for vanilla PHP'"]
 
 [start]
-cmd = "nginx -c /app/nginx.conf && php-fpm"
+cmd = "php -S 0.0.0.0:${PORT:-8080} router.php"

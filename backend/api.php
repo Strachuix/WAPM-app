@@ -284,9 +284,12 @@ function addDevice($data) {
             CURLOPT_TIMEOUT => CURL_TIMEOUT,
             CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
             CURLOPT_USERPWD => TRACCAR_USER . ':' . TRACCAR_PASSWORD,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json; charset=utf-8',
-                'Accept: application/json'
+                'Accept: application/json',
+                'User-Agent: WAPM-GPS-Tracker/1.0'
             ]
         ]);
         
@@ -470,10 +473,19 @@ function getGroups() {
             CURLOPT_TIMEOUT => 10,
             CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
             CURLOPT_USERPWD => TRACCAR_USER . ':' . TRACCAR_PASSWORD,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+                'User-Agent: WAPM-GPS-Tracker/1.0'
+            ]
         ]);
+        
         $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-        if ($response) {
+        
+        if ($response && $httpCode === 200) {
             $groupsData = json_decode($response, true);
             if (is_array($groupsData)) {
                 foreach ($groupsData as $group) {

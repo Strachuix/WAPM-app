@@ -284,6 +284,8 @@ function addDevice($data) {
             CURLOPT_TIMEOUT => CURL_TIMEOUT,
             CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
             CURLOPT_USERPWD => TRACCAR_USER . ':' . TRACCAR_PASSWORD,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 5,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_HTTPHEADER => [
@@ -295,25 +297,29 @@ function addDevice($data) {
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $effectiveUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
         $error = curl_error($ch);
         curl_close($ch);
         
         if ($response === false) {
+            error_log("cURL error when adding device to $devicesUrl: $error");
             return [
                 'success' => false,
                 'message' => "cURL error: $error"
             ];
         }
         
-        if ($httpCode !== 200) {
+        if ($httpCode !== 200 && $httpCode !== 201) {
             $responseData = json_decode($response, true);
             $traccarError = $responseData['message'] ?? $response;
-            error_log("Traccar API error (HTTP $httpCode): $traccarError");
+            error_log("Traccar API error (HTTP $httpCode) at $effectiveUrl: $traccarError");
             return [
                 'success' => false,
                 'message' => "Traccar API error: $traccarError (HTTP $httpCode)",
                 'debug' => [
                     'httpCode' => $httpCode,
+                    'requestUrl' => $devicesUrl,
+                    'effectiveUrl' => $effectiveUrl,
                     'response' => $response,
                     'sentData' => $deviceData
                 ]

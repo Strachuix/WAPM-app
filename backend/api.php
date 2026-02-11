@@ -224,9 +224,21 @@ function convertToLocalTime($utcTime) {
 }
 
 /**
+ * Transliteruje polskie znaki na ASCII (dla starych baz danych)
+ * 
+ * @param string $text Tekst z polskimi znakami
+ * @return string Tekst bez polskich znaków
+ */
+function transliteratePolish($text) {
+    $polishChars = ['ą', 'ć', 'ę', 'ł', 'ń', 'ó', 'ś', 'ź', 'ż', 'Ą', 'Ć', 'Ę', 'Ł', 'Ń', 'Ó', 'Ś', 'Ź', 'Ż'];
+    $asciiChars = ['a', 'c', 'e', 'l', 'n', 'o', 's', 'z', 'z', 'A', 'C', 'E', 'L', 'N', 'O', 'S', 'Z', 'Z'];
+    return str_replace($polishChars, $asciiChars, $text);
+}
+
+/**
  * Dodaje nowe urządzenie do Traccar
  * 
- * @param array $data Dane urządzenia (name, category, description, groupId)
+ * @param array $data Dane urządzenia ['name', 'category', 'description', 'groupId']
  * @return array ['success' => bool, 'device' => array|null, 'message' => string]
  */
 function addDevice($data) {
@@ -234,6 +246,10 @@ function addDevice($data) {
     $category = $data['category'] ?? 'mobile';
     $description = $data['description'] ?? '';
     $groupId = $data['groupId'] ?? null;
+    
+    // Transliteruj polskie znaki (demo.traccar.org ma problemy z UTF-8)
+    $name = transliteratePolish($name);
+    $description = transliteratePolish($description);
     
     // Generuj uniqueId na podstawie kategorii
     $uniqueId = generateUniqueId($category);
@@ -257,15 +273,19 @@ function addDevice($data) {
     // Dodaj urządzenie przez API Traccar
     if (function_exists('curl_init')) {
         $ch = curl_init($devicesUrl);
+        
+        // Zakoduj dane do JSON z prawidłowym UTF-8
+        $jsonData = json_encode($deviceData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($deviceData),
+            CURLOPT_POSTFIELDS => $jsonData,
             CURLOPT_TIMEOUT => CURL_TIMEOUT,
             CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
             CURLOPT_USERPWD => TRACCAR_USER . ':' . TRACCAR_PASSWORD,
             CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
+                'Content-Type: application/json; charset=utf-8',
                 'Accept: application/json'
             ]
         ]);

@@ -377,6 +377,10 @@
             animation: slideDown 0.3s;
         }
         
+        .modal-small {
+            max-width: 400px;
+        }
+        
         .modal-close {
             position: absolute;
             right: 1rem;
@@ -823,19 +827,34 @@
         </div>
     </div>
 
+    <!-- Modal: Autoryzacja administratora -->
+    <div id="adminAuthModal" class="modal">
+        <div class="modal-content modal-small">
+            <span class="modal-close" id="closeAdminAuthModal">&times;</span>
+            <h2>🔐 Autoryzacja administratora</h2>
+            <p style="color: #666; margin-bottom: 1rem;">Wprowadź hasło aby zobaczyć konfigurację urządzenia</p>
+            
+            <div class="form-group">
+                <label for="adminAuthPassword">Hasło administratora *</label>
+                <input type="password" id="adminAuthPassword" required placeholder="Hasło administratora" autocomplete="off">
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="cancelAdminAuth">Anuluj</button>
+                <button type="button" class="btn btn-primary" id="confirmAdminAuth">🔓 Odblokuj</button>
+            </div>
+            
+            <div id="adminAuthError" class="error" style="display: none;"></div>
+        </div>
+    </div>
+
     <!-- Modal: Konfiguracja urządzenia -->
     <div id="configModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" id="closeConfigModal">&times;</span>
             <h2>⚙️ Konfiguracja urządzenia</h2>
             
-            <div class="config-section">
-                <label>Hasło administratora *</label>
-                <input type="password" id="configAdminPassword" placeholder="Wprowadź hasło administratora">
-                <button class="btn btn-primary" id="unlockConfigBtn">🔓 Pokaż konfigurację</button>
-            </div>
-            
-            <div id="configData" style="display: none;">
+            <div id="configData">
                 <div class="config-section">
                     <h3>📱 Dane urządzenia</h3>
                     <div class="config-item">
@@ -869,7 +888,6 @@
                 </div>
             </div>
             
-            <div id="configError" class="error" style="display: none;"></div>
         </div>
     </div>
 
@@ -1104,9 +1122,25 @@
             document.getElementById('closeSidebar').addEventListener('click', closeDevicesSidebar);
             document.getElementById('sidebarOverlay').addEventListener('click', closeDevicesSidebar);
             
+            // Admin Auth Modal
+            document.getElementById('closeAdminAuthModal').addEventListener('click', closeAdminAuthModal);
+            document.getElementById('cancelAdminAuth').addEventListener('click', closeAdminAuthModal);
+            document.getElementById('confirmAdminAuth').addEventListener('click', confirmAdminAuth);
+            document.getElementById('adminAuthModal').addEventListener('click', (e) => {
+                if (e.target.id === 'adminAuthModal') {
+                    closeAdminAuthModal();
+                }
+            });
+            
+            // Enter key w polu hasła
+            document.getElementById('adminAuthPassword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    confirmAdminAuth();
+                }
+            });
+            
             // Config Modal
             document.getElementById('closeConfigModal').addEventListener('click', closeConfigModal);
-            document.getElementById('unlockConfigBtn').addEventListener('click', unlockConfig);
             document.getElementById('configModal').addEventListener('click', (e) => {
                 if (e.target.id === 'configModal') {
                     closeConfigModal();
@@ -1574,7 +1608,7 @@
         }
         
         /**
-         * Otwiera modal konfiguracji urządzenia
+         * Otwiera modal autoryzacji administratora przed pokazaniem konfiguracji
          * @param {number} deviceId - ID urządzenia
          */
         function openConfigModal(deviceId) {
@@ -1583,32 +1617,38 @@
             
             state.selectedDeviceForConfig = device;
             
-            const modal = document.getElementById('configModal');
+            // Otwórz modal autoryzacji
+            const modal = document.getElementById('adminAuthModal');
             modal.classList.add('show');
             
             // Resetuj formularz
-            document.getElementById('configAdminPassword').value = '';
-            document.getElementById('configData').style.display = 'none';
-            document.getElementById('configError').style.display = 'none';
+            document.getElementById('adminAuthPassword').value = '';
+            document.getElementById('adminAuthError').style.display = 'none';
             
             closeDevicesSidebar();
+            
+            // Focus na pole hasła
+            setTimeout(() => {
+                document.getElementById('adminAuthPassword').focus();
+            }, 300);
         }
         
         /**
-         * Zamyka modal konfiguracji
+         * Zamyka modal autoryzacji administratora
          */
-        function closeConfigModal() {
-            const modal = document.getElementById('configModal');
+        function closeAdminAuthModal() {
+            const modal = document.getElementById('adminAuthModal');
             modal.classList.remove('show');
-            state.selectedDeviceForConfig = null;
+            document.getElementById('adminAuthPassword').value = '';
+            document.getElementById('adminAuthError').style.display = 'none';
         }
         
         /**
-         * Odblokowuje widok konfiguracji po podaniu hasła admina
+         * Potwierdza autoryzację administratora i otwiera konfigurację
          */
-        async function unlockConfig() {
-            const adminPassword = document.getElementById('configAdminPassword').value;
-            const errorEl = document.getElementById('configError');
+        async function confirmAdminAuth() {
+            const adminPassword = document.getElementById('adminAuthPassword').value;
+            const errorEl = document.getElementById('adminAuthError');
             
             if (!adminPassword) {
                 errorEl.textContent = '❌ Wprowadź hasło administratora';
@@ -1628,25 +1668,26 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    errorEl.style.display = 'none';
-                    showConfigData(state.selectedDeviceForConfig);
+                    // Hasło prawidłowe - zamknij modal autoryzacji i otwórz konfigurację
+                    closeAdminAuthModal();
+                    showConfigModalWithData(state.selectedDeviceForConfig);
                 } else {
-                    throw new Error(result.message || 'Nieprawidłowe hasło');
+                    throw new Error('Nieprawidłowe hasło administratora');
                 }
             } catch (error) {
-                console.error('Config unlock error:', error);
+                console.error('Admin auth error:', error);
                 errorEl.textContent = `❌ ${error.message}`;
                 errorEl.style.display = 'block';
             }
         }
         
         /**
-         * Pokazuje dane konfiguracyjne urządzenia
+         * Otwiera modal konfiguracji z danymi urządzenia
          * @param {Object} device - Dane urządzenia
          */
-        function showConfigData(device) {
-            const configData = document.getElementById('configData');
-            configData.style.display = 'block';
+        function showConfigModalWithData(device) {
+            const modal = document.getElementById('configModal');
+            modal.classList.add('show');
             
             // Wypełnij dane
             document.getElementById('configDeviceName').textContent = device.name;
@@ -1659,6 +1700,15 @@
             // Instrukcje dla różnych kategorii
             const instructions = getConfigInstructions(device.category, device.uniqueId, serverUrl);
             document.getElementById('configInstructions').innerHTML = instructions;
+        }
+        
+        /**
+         * Zamyka modal konfiguracji
+         */
+        function closeConfigModal() {
+            const modal = document.getElementById('configModal');
+            modal.classList.remove('show');
+            state.selectedDeviceForConfig = null;
         }
         
         /**

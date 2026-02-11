@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="description" content="System śledzenia GPS dla pojazdów i pieszych">
+    <title>WAPM GPS Tracker</title>
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WAPM GPS">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            overflow: hidden;
+            background: #2c3e50;
+        }
+        
+        /* Login Screen */
+        #loginScreen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+        }
+        
+        #loginScreen h1 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        #loginForm {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        
+        #loginForm input {
+            width: 100%;
+            padding: 1rem;
+            padding-right: 5.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0.5rem 0.75rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .toggle-password:hover {
+            background: #2980b9;
+        }
+        
+        #loginForm button[type="submit"] {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            background: #3498db;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        #loginForm button[type="submit"]:hover {
+            background: #2980b9;
+        }
+        
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Main App */
+        #app {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+        }
+        
+        /* Header */
+        #header {
+            background: #2c3e50;
+            color: white;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+            flex-wrap: wrap;
+        }
+        
+        #header h2 {
+            font-size: 1.2rem;
+            margin-right: auto;
+        }
+        
+        #search {
+            flex: 1;
+            min-width: 150px;
+            padding: 0.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-logout {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        /* Filter Buttons */
+        #filters {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #34495e;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 0.4rem 1rem;
+            border: 2px solid transparent;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .filter-btn.active {
+            border-color: white;
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+        
+        .filter-ambulance {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .filter-pickup {
+            background: #e67e22;
+            color: white;
+        }
+        
+        .filter-person {
+            background: #3498db;
+            color: white;
+        }
+        
+        .filter-mobile {
+            background: #27ae60;
+            color: white;
+        }
+        
+        /* Map Container */
+        #mapContainer {
+            flex: 1;
+            position: relative;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* My Location Button */
+        #myLocationBtn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border: 2px solid #2c3e50;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s;
+        }
+        
+        #myLocationBtn:hover {
+            background: #3498db;
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        /* Status Badge */
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            z-index: 1000;
+        }
+        
+        /* Popup Styles */
+        .leaflet-popup-content {
+            margin: 0;
+            padding: 0;
+            min-width: 220px;
+        }
+        
+        .popup-content {
+            padding: 1rem;
+        }
+        
+        .popup-content h3 {
+            margin: 0 0 0.75rem 0;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+        
+        .popup-content p {
+            margin: 0.4rem 0;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        
+        .popup-content strong {
+            color: #2c3e50;
+        }
+        
+        .popup-content .offline {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .popup-content button {
+            margin-top: 0.75rem;
+            width: 100%;
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 600px) {
+            #header h2 {
+                font-size: 1rem;
+            }
+            
+            #search {
+                width: 100%;
+                order: 10;
+            }
+            
+            .btn {
+                font-size: 0.75rem;
+                padding: 0.4rem 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen">
+        <h1>🌍 WAPM GPS Tracker</h1>
+        <form id="loginForm">
+            <div class="password-wrapper">
+                <input type="password" id="passwordInput" placeholder="Wprowadź hasło dostępu" required autocomplete="current-password">
+                <button type="button" class="toggle-password" id="togglePassword">Pokaż</button>
+            </div>
+            <button type="submit">Zaloguj się</button>
+            <div id="loginError" class="error"></div>
+        </form>
+    </div>
+    
+    <!-- Main App -->
+    <div id="app">
+        <div id="header">
+            <h2>🌍 WAPM GPS</h2>
+            <input type="text" id="search" placeholder="Szukaj urządzenia...">
+            <button class="btn btn-success" id="refreshBtn">🔄 Odśwież</button>
+            <button class="btn btn-logout" id="logoutBtn">🚪 Wyloguj</button>
+        </div>
+        
+        <div id="filters">
+            <button class="filter-btn filter-ambulance active" data-category="ambulance">
+                <img src="frontend/assets/truck-medical-solid-full.svg" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; filter: brightness(0) invert(1);" />
+                Karetki
+            </button>
+            <button class="filter-btn filter-pickup active" data-category="pickup">
+                <img src="frontend/assets/car-solid-full.svg" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; filter: brightness(0) invert(1);" />
+                SZOP
+            </button>
+            <button class="filter-btn filter-person active" data-category="person">
+                <img src="frontend/assets/person-solid-full.svg" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; filter: brightness(0) invert(1);" />
+                Grupy
+            </button>
+            <button class="filter-btn filter-mobile active" data-category="mobile">
+                <img src="frontend/assets/mobile-solid-full.svg" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; filter: brightness(0) invert(1);" />
+                Telefony
+            </button>
+        </div>
+        
+        <div id="mapContainer">
+            <div id="map"></div>
+            <button id="myLocationBtn" title="Moja lokalizacja">📍</button>
+            <div class="status-badge" id="statusBadge">Ładowanie...</div>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+    
+    <script>
+        /**
+         * WAPM GPS Tracker - Frontend Application
+         * @version 1.0
+         */
+        
+        // === KONFIGURACJA ===
+        const CONFIG = {
+            API_URL: `${window.location.protocol}//${window.location.host}/backend/api.php`, // Pełny URL
+            API_PASSWORD: 'secure123', // ZMIEŃ TO - musi odpowiadać .env (ACCESS_PASSWORD)
+            REFRESH_INTERVAL: 15000, // 15 sekund
+            OFFLINE_THRESHOLD: 600000, // 10 minut
+            MAP_CENTER: [52.2297, 21.0122], // Warszawa - domyślne centrum
+            MAP_ZOOM: 13,
+            TRAIL_POINTS_VEHICLES: 5,
+            TRAIL_POINTS_PERSONS: 2
+        };
+        
+        // === STATE ===
+        const state = {
+            map: null,
+            markers: {},
+            trails: {},
+            devices: [],
+            filters: {
+                ambulance: true,
+                pickup: true,
+                person: true,
+                mobile: true
+            },
+            searchTerm: '',
+            myLocationMarker: null,
+            refreshInterval: null,
+            usingCache: false
+        };
+        
+        // === KATEGORIE IKON ===
+        const CATEGORY_CONFIG = {
+            ambulance: {
+                icon: 'frontend/assets/truck-medical-solid-full.svg',
+                color: '#e74c3c',
+                name: 'Karetka'
+            },
+            pickup: {
+                icon: 'frontend/assets/car-solid-full.svg',
+                color: '#e67e22',
+                name: 'SZOP'
+            },
+            person: {
+                icon: 'frontend/assets/person-solid-full.svg',
+                color: '#3498db',
+                name: 'Grupa'
+            },
+            mobile: {
+                icon: 'frontend/assets/mobile-solid-full.svg',
+                color: '#27ae60',
+                name: 'Telefon'
+            }
+        };
+        
+        /**
+         * Inicjalizacja aplikacji
+         */
+        function init() {
+            // Inicjalizuj event listenery dla ekranu logowania
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('togglePassword').addEventListener('click', togglePasswordVisibility);
+            
+            // Sprawdź login po załadowaniu Leaflet
+            waitForLeaflet(() => {
+                checkLogin();
+                registerServiceWorker();
+            });
+        }
+        
+        /**
+         * Czeka na załadowanie biblioteki Leaflet
+         * @param {Function} callback - Funkcja do wywołania po załadowaniu
+         */
+        function waitForLeaflet(callback) {
+            if (typeof L !== 'undefined') {
+                callback();
+            } else {
+                setTimeout(() => waitForLeaflet(callback), 50);
+            }
+        }
+        
+        /**
+         * Sprawdza status logowania
+         */
+        function checkLogin() {
+            const isLoggedIn = localStorage.getItem('wapm_logged_in');
+            
+            if (isLoggedIn === 'true') {
+                showApp();
+            } else {
+                showLogin();
+            }
+        }
+        
+        /**
+         * Pokazuje ekran logowania
+         */
+        function showLogin() {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+        }
+        
+        /**
+         * Pokazuje główną aplikację
+         */
+        function showApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+            
+            // Upewnij się że Leaflet jest załadowany przed inicjalizacją mapy
+            waitForLeaflet(() => {
+                initApp();
+            });
+        }
+        
+        /**
+         * Inicjalizuje główną aplikację
+         */
+        function initApp() {
+            initMap();
+            initEventListeners();
+            fetchDevices();
+            state.refreshInterval = setInterval(fetchDevices, CONFIG.REFRESH_INTERVAL);
+        }
+        
+        /**
+         * Inicjalizuje mapę Leaflet
+         */
+        function initMap() {
+            state.map = L.map('map', {
+                zoomControl: true,
+                preferCanvas: true
+            }).setView(CONFIG.MAP_CENTER, CONFIG.MAP_ZOOM);
+            
+            // Provider 1: OpenStreetMap (główny)
+            const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                maxZoom: 19,
+                minZoom: 3,
+                subdomains: ['a', 'b', 'c'],
+                errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+            });
+            
+            // Provider 2: CartoDB Voyager (backup - szybszy)
+            const cartoDBLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | © <a href="https://carto.com/attributions">CARTO</a>',
+                maxZoom: 20,
+                subdomains: 'abcd'
+            });
+            
+            // Użyj CartoDB jako domyślnego (szybszy i bardziej niezawodny)
+            cartoDBLayer.addTo(state.map);
+            
+            // Obsługa błędów ładowania kafelków
+            cartoDBLayer.on('tileerror', function(error, tile) {
+                console.warn('Nie udało się załadować kafelka mapy');
+            });
+            
+            // Poczekaj aż mapa się załaduje
+            state.map.whenReady(() => {
+                console.log('Mapa załadowana');
+                setTimeout(() => state.map.invalidateSize(), 100);
+            });
+            
+            // Dodaj kontrolkę przełączania map
+            const baseMaps = {
+                "CartoDB (szybka)": cartoDBLayer,
+                "OpenStreetMap": osmLayer
+            };
+            L.control.layers(baseMaps).addTo(state.map);
+        }
+        
+        /**
+         * Inicjalizuje nasłuchiwacze zdarzeń
+         */
+        function initEventListeners() {
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+            
+            // Refresh
+            document.getElementById('refreshBtn').addEventListener('click', () => {
+                fetchDevices();
+            });
+            
+            // Search
+            document.getElementById('search').addEventListener('input', (e) => {
+                state.searchTerm = e.target.value.toLowerCase();
+                updateMarkers();
+            });
+            
+            // Filters
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const category = e.target.dataset.category;
+                    state.filters[category] = !state.filters[category];
+                    e.target.classList.toggle('active');
+                    updateMarkers();
+                });
+            });
+            
+            // My Location
+            document.getElementById('myLocationBtn').addEventListener('click', showMyLocation);
+        }
+        
+        /**
+         * Przełącza widoczność hasła
+         */
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('passwordInput');
+            const toggleBtn = document.getElementById('togglePassword');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleBtn.textContent = 'Ukryj';
+            } else {
+                passwordInput.type = 'password';
+                toggleBtn.textContent = 'Pokaż';
+            }
+        }
+        
+        /**
+         * Obsługuje logowanie
+         * @param {Event} e - Event formularza
+         */
+        function handleLogin(e) {
+            e.preventDefault();
+            const password = document.getElementById('passwordInput').value;
+            
+            // Walidacja po stronie klienta (podstawowa)
+            if (password === CONFIG.API_PASSWORD) {
+                localStorage.setItem('wapm_logged_in', 'true');
+                showApp();
+            } else {
+                document.getElementById('loginError').textContent = 'Nieprawidłowe hasło';
+                setTimeout(() => {
+                    document.getElementById('loginError').textContent = '';
+                }, 3000);
+            }
+        }
+        
+        /**
+         * Obsługuje wylogowanie
+         */
+        function handleLogout() {
+            localStorage.removeItem('wapm_logged_in');
+            clearInterval(state.refreshInterval);
+            location.reload();
+        }
+        
+        /**
+         * Pobiera urządzenia z API
+         */
+        async function fetchDevices() {
+            try {
+                updateStatus('Pobieranie danych...', 'info');
+                
+                const response = await fetch(`${CONFIG.API_URL}?pass=${CONFIG.API_PASSWORD}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    // Zapisz dane do cache localStorage
+                    localStorage.setItem('wapm_devices_cache', JSON.stringify({
+                        timestamp: Date.now(),
+                        devices: result.data
+                    }));
+                    
+                    state.devices = result.data;
+                    state.usingCache = false;
+                    updateMarkers();
+                    updateStatus(`Aktywne: ${result.count} urządzeń`, 'success');
+                } else {
+                    throw new Error(result.message || 'Błąd danych');
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                
+                // Spróbuj użyć danych z cache
+                const cached = localStorage.getItem('wapm_devices_cache');
+                if (cached) {
+                    try {
+                        const cacheData = JSON.parse(cached);
+                        const cacheAge = Date.now() - cacheData.timestamp;
+                        const cacheAgeMinutes = Math.floor(cacheAge / 60000);
+                        
+                        // Filtruj - pokaż tylko urządzenia offline z cache
+                        const offlineDevices = cacheData.devices.filter(device => 
+                            isDeviceOffline(device.lastUpdate)
+                        );
+                        
+                        state.devices = offlineDevices;
+                        state.usingCache = true;
+                        updateMarkers();
+                        updateStatus(`⚠️ Brak połączenia - dane z cache (${cacheAgeMinutes} min temu, ${offlineDevices.length} offline)`, 'warning');
+                    } catch (e) {
+                        updateStatus('Błąd połączenia', 'error');
+                    }
+                } else {
+                    updateStatus('Błąd połączenia', 'error');
+                }
+            }
+        }
+        
+        /**
+         * Aktualizuje markery na mapie
+         */
+        function updateMarkers() {
+            state.devices.forEach(device => {
+                const isVisible = shouldShowDevice(device);
+                
+                if (isVisible) {
+                    updateDeviceMarker(device);
+                } else {
+                    removeDeviceMarker(device.deviceId);
+                }
+            });
+        }
+        
+        /**
+         * Sprawdza czy urządzenie powinno być widoczne
+         * @param {Object} device - Urządzenie
+         * @returns {boolean}
+         */
+        function shouldShowDevice(device) {
+            // Filter by category
+            if (!state.filters[device.category]) {
+                return false;
+            }
+            
+            // Filter by search
+            if (state.searchTerm) {
+                const searchable = `${device.name} ${device.description}`.toLowerCase();
+                return searchable.includes(state.searchTerm);
+            }
+            
+            return true;
+        }
+        
+        /**
+         * Aktualizuje marker urządzenia
+         * @param {Object} device - Dane urządzenia
+         */
+        function updateDeviceMarker(device) {
+            const isOffline = isDeviceOffline(device.lastUpdate);
+            const config = CATEGORY_CONFIG[device.category] || CATEGORY_CONFIG.mobile;
+            
+            // Utwórz lub zaktualizuj marker
+            if (!state.markers[device.deviceId]) {
+                const icon = createCustomIcon(config.icon, config.color, isOffline);
+                const marker = L.marker([device.lat, device.lon], { icon });
+                marker.addTo(state.map);
+                state.markers[device.deviceId] = marker;
+            } else {
+                const marker = state.markers[device.deviceId];
+                marker.setLatLng([device.lat, device.lon]);
+                const icon = createCustomIcon(config.icon, config.color, isOffline);
+                marker.setIcon(icon);
+            }
+            
+            // Popup
+            state.markers[device.deviceId].bindPopup(createPopupContent(device, isOffline));
+            
+            // Trail (ślimak)
+            updateTrail(device);
+        }
+        
+        /**
+         * Usuwa marker urządzenia
+         * @param {number} deviceId - ID urządzenia
+         */
+        function removeDeviceMarker(deviceId) {
+            if (state.markers[deviceId]) {
+                state.map.removeLayer(state.markers[deviceId]);
+                delete state.markers[deviceId];
+            }
+            
+            if (state.trails[deviceId]) {
+                state.map.removeLayer(state.trails[deviceId]);
+                delete state.trails[deviceId];
+            }
+        }
+        
+        /**
+         * Tworzy niestandardową ikonę
+         * @param {string} iconPath - Ścieżka do ikony SVG
+         * @param {string} color - Kolor tła
+         * @param {boolean} offline - Czy offline
+         * @returns {L.DivIcon}
+         */
+        function createCustomIcon(iconPath, color, offline) {
+            const opacity = offline ? 0.5 : 1;
+            const filter = offline ? 'grayscale(100%)' : 'none';
+            
+            return L.divIcon({
+                html: `<div style="
+                    background: ${color};
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: 3px solid white;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    opacity: ${opacity};
+                    filter: ${filter};
+                ">
+                    <img src="${iconPath}" style="width: 24px; height: 24px; filter: brightness(0) invert(1);" />
+                </div>`,
+                className: '',
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });
+        }
+        
+        /**
+         * Tworzy zawartość popup
+         * @param {Object} device - Urządzenie
+         * @param {boolean} offline - Czy offline
+         * @returns {string} HTML popup
+         */
+        function createPopupContent(device, offline) {
+            const config = CATEGORY_CONFIG[device.category] || CATEGORY_CONFIG.mobile;
+            const battery = device.batteryLevel ? `${device.batteryLevel}%` : 'N/A';
+            const lastUpdateFormatted = formatDate(device.lastUpdate);
+            
+            return `
+                <div class="popup-content">
+                    <h3>
+                        <img src="${config.icon}" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 5px;" />
+                        ${device.name}
+                    </h3>
+                    ${device.groupName ? `<p><strong>Grupa:</strong> ${device.groupName}</p>` : ''}
+                    ${device.description ? `<p><strong>Obsada:</strong> ${device.description}</p>` : ''}
+                    <p><strong>Bateria:</strong> ${battery}</p>
+                    <p><strong>Ostatnia aktualizacja:</strong> ${lastUpdateFormatted}</p>
+                    ${offline ? '<p class="offline">⚠️ BRAK ZASIĘGU</p>' : ''}
+                    <button class="btn btn-primary" onclick="navigateTo(${device.lat}, ${device.lon})">
+                        🗺️ Prowadź do
+                    </button>
+                </div>
+            `;
+        }
+        
+        /**
+         * Aktualizuje ślad (trail) urządzenia
+         * @param {Object} device - Urządzenie
+         */
+        function updateTrail(device) {
+            // Dla uproszczenia, trail nie jest implementowany w pełni
+            // (wymagałby historii pozycji - można rozszerzyć w przyszłości)
+            // Placeholder dla przyszłej implementacji
+        }
+        
+        /**
+         * Sprawdza czy urządzenie jest offline
+         * @param {string} lastUpdate - Ostatnia aktualizacja (ISO 8601)
+         * @returns {boolean}
+         */
+        function isDeviceOffline(lastUpdate) {
+            const lastTime = new Date(lastUpdate).getTime();
+            const now = Date.now();
+            return (now - lastTime) > CONFIG.OFFLINE_THRESHOLD;
+        }
+        
+        /**
+         * Formatuje datę
+         * @param {string} dateString - Data ISO
+         * @returns {string}
+         */
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('pl-PL');
+        }
+        
+        /**
+         * Nawigacja do lokalizacji (Google Maps)
+         * @param {number} lat - Szerokość geograficzna
+         * @param {number} lon - Długość geograficzna
+         */
+        function navigateTo(lat, lon) {
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+            window.open(url, '_blank');
+        }
+        
+        /**
+         * Pokazuje lokalizację użytkownika
+         */
+        function showMyLocation() {
+            if (!navigator.geolocation) {
+                alert('Geolokalizacja nie jest wspierana');
+                return;
+            }
+            
+            updateStatus('Pobieranie lokalizacji...', 'info');
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    
+                    if (state.myLocationMarker) {
+                        state.map.removeLayer(state.myLocationMarker);
+                    }
+                    
+                    const icon = L.divIcon({
+                        html: '<div style="background: #3498db; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(52,152,219,0.5);"></div>',
+                        className: '',
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    });
+                    
+                    state.myLocationMarker = L.marker([lat, lon], { icon }).addTo(state.map);
+                    state.map.setView([lat, lon], 15);
+                    updateStatus('Aktywne urządzenia', 'success');
+                },
+                (error) => {
+                    console.error('Geolocation error:', error);
+                    alert('Nie można pobrać lokalizacji');
+                    updateStatus('Błąd lokalizacji', 'error');
+                }
+            );
+        }
+        
+        /**
+         * Aktualizuje status badge
+         * @param {string} message - Wiadomość
+         * @param {string} type - Typ (success, error, info)
+         */
+        function updateStatus(message, type = 'info') {
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = message;
+            
+            const colors = {
+                success: '#27ae60',
+                error: '#e74c3c',
+                info: '#3498db',
+                warning: '#f39c12'
+            };
+            
+            badge.style.background = `rgba(0, 0, 0, 0.7)`;
+            badge.style.borderLeft = `4px solid ${colors[type]}`;
+        }
+        
+        /**
+         * Rejestruje Service Worker
+         */
+        function registerServiceWorker() {
+            // TYMCZASOWO WYŁĄCZONE - włącz na produkcji
+            console.log('Service Worker wyłączony dla developmentu');
+            
+            // Wyrejestruj wszystkie istniejące service workery w trybie dev
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    registrations.forEach(reg => reg.unregister());
+                });
+            }
+            return;
+            
+            if ('serviceWorker' in navigator) {
+                // Ścieżka względna do service-worker.js
+                const swPath = window.location.pathname.includes('/frontend/') 
+                    ? '/frontend/service-worker.js' 
+                    : 'service-worker.js';
+                    
+                navigator.serviceWorker.register(swPath)
+                    .then(() => console.log('Service Worker registered'))
+                    .catch(err => console.error('SW registration failed:', err));
+            }
+        }
+        
+        // Inicjalizacja przy załadowaniu
+        // Używamy window load aby upewnić się że Leaflet jest załadowany
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

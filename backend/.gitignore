@@ -1,0 +1,10 @@
+# Pliki z danymi wrażliwymi
+.env
+
+# Logi PHP
+*.log
+error_log
+
+# OS pliki
+.DS_Store
+Thumbs.db

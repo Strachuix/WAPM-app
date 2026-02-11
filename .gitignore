@@ -1,0 +1,18 @@
+# Pliki z danymi wrażliwymi
+backend/.env
+
+# Logi
+*.log
+error_log
+
+# OS pliki
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

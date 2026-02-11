@@ -183,6 +183,15 @@
             color: white;
         }
         
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
         .btn-logout {
             background: #95a5a6;
             color: white;
@@ -337,6 +346,125 @@
             100% { transform: rotate(360deg); }
         }
         
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideDown 0.3s;
+        }
+        
+        .modal-close {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .modal-close:hover {
+            color: #333;
+        }
+        
+        .modal-content h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .form-group small {
+            display: block;
+            margin-top: 0.25rem;
+            color: #666;
+            font-size: 0.85rem;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .form-actions button {
+            flex: 1;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
         /* Responsive */
         @media (max-width: 600px) {
             #header h2 {
@@ -374,6 +502,7 @@
         <div id="header">
             <h2>🌍 WAPM GPS</h2>
             <input type="text" id="search" placeholder="Szukaj urządzenia...">
+            <button class="btn btn-primary" id="addDeviceBtn">➕ Dodaj urządzenie</button>
             <button class="btn btn-success" id="refreshBtn">🔄 Odśwież</button>
             <button class="btn btn-logout" id="logoutBtn">🚪 Wyloguj</button>
         </div>
@@ -404,6 +533,50 @@
         </div>
     </div>
     
+    <!-- Modal: Dodaj urządzenie -->
+    <div id="addDeviceModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeAddDeviceModal">&times;</span>
+            <h2>➕ Dodaj nowe urządzenie</h2>
+            <form id="addDeviceForm">
+                <div class="form-group">
+                    <label for="deviceName">Nazwa urządzenia *</label>
+                    <input type="text" id="deviceName" required placeholder="np. Karetka 01">
+                </div>
+                
+                <div class="form-group">
+                    <label for="deviceCategory">Kategoria *</label>
+                    <select id="deviceCategory" required>
+                        <option value="ambulance">🚑 Karetka</option>
+                        <option value="pickup">🚙 SZOP</option>
+                        <option value="person">🚶 Grupa</option>
+                        <option value="mobile">📱 Telefon</option>
+                    </select>
+                    <small>Kategoria określa ikonę i automatycznie przypisuje ID urządzenia</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="deviceDescription">Opis / Obsada</label>
+                    <input type="text" id="deviceDescription" placeholder="np. Jan Kowalski, Anna Nowak">
+                </div>
+                
+                <div class="form-group">
+                    <label for="deviceGroup">Grupa Traccar (opcjonalne)</label>
+                    <input type="text" id="deviceGroup" placeholder="Nazwa grupy w Traccar">
+                    <small>Jeśli masz skonfigurowane grupy w Traccar, wpisz nazwę</small>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelAddDevice">Anuluj</button>
+                    <button type="submit" class="btn btn-primary">✅ Dodaj urządzenie</button>
+                </div>
+                
+                <div id="addDeviceError" class="error" style="display: none;"></div>
+                <div id="addDeviceSuccess" class="success" style="display: none;"></div>
+            </form>
+        </div>
+    </div>
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
     
@@ -615,6 +788,19 @@
             
             // My Location
             document.getElementById('myLocationBtn').addEventListener('click', showMyLocation);
+            
+            // Add Device Modal
+            document.getElementById('addDeviceBtn').addEventListener('click', openAddDeviceModal);
+            document.getElementById('closeAddDeviceModal').addEventListener('click', closeAddDeviceModal);
+            document.getElementById('cancelAddDevice').addEventListener('click', closeAddDeviceModal);
+            document.getElementById('addDeviceForm').addEventListener('submit', handleAddDevice);
+            
+            // Close modal on background click
+            document.getElementById('addDeviceModal').addEventListener('click', (e) => {
+                if (e.target.id === 'addDeviceModal') {
+                    closeAddDeviceModal();
+                }
+            });
         }
         
         /**
@@ -890,6 +1076,97 @@
         function formatDate(dateString) {
             const date = new Date(dateString);
             return date.toLocaleString('pl-PL');
+        }
+        
+        /**
+         * Otwiera modal dodawania urządzenia
+         */
+        function openAddDeviceModal() {
+            const modal = document.getElementById('addDeviceModal');
+            modal.classList.add('show');
+            document.getElementById('addDeviceForm').reset();
+            document.getElementById('addDeviceError').style.display = 'none';
+            document.getElementById('addDeviceSuccess').style.display = 'none';
+        }
+        
+        /**
+         * Zamyka modal dodawania urządzenia
+         */
+        function closeAddDeviceModal() {
+            const modal = document.getElementById('addDeviceModal');
+            modal.classList.remove('show');
+        }
+        
+        /**
+         * Obsługuje dodawanie nowego urządzenia
+         * @param {Event} e - Event submit
+         */
+        async function handleAddDevice(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('deviceName').value.trim();
+            const category = document.getElementById('deviceCategory').value;
+            const description = document.getElementById('deviceDescription').value.trim();
+            const groupName = document.getElementById('deviceGroup').value.trim();
+            
+            const errorEl = document.getElementById('addDeviceError');
+            const successEl = document.getElementById('addDeviceSuccess');
+            
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+            
+            if (!name || !category) {
+                errorEl.textContent = 'Uzupełnij wymagane pola';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            // Przygotuj dane
+            const deviceData = {
+                name,
+                category,
+                description
+            };
+            
+            // Jeśli podano grupę, spróbuj znaleźć jej ID
+            if (groupName) {
+                // TODO: Można rozszerzyć o wyszukiwanie groupId po nazwie
+                // Na razie pomijamy groupId
+            }
+            
+            try {
+                updateStatus('Dodawanie urządzenia...', 'info');
+                
+                const response = await fetch(`${CONFIG.API_URL}?pass=${CONFIG.API_PASSWORD}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(deviceData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    successEl.textContent = `✅ Urządzenie "${name}" zostało dodane! UniqueID: ${result.device.uniqueId}`;
+                    successEl.style.display = 'block';
+                    
+                    // Odśwież listę urządzeń po 2 sekundach
+                    setTimeout(() => {
+                        closeAddDeviceModal();
+                        fetchDevices();
+                    }, 2000);
+                    
+                    updateStatus('Urządzenie dodane pomyślnie', 'success');
+                } else {
+                    throw new Error(result.message || 'Błąd dodawania urządzenia');
+                }
+            } catch (error) {
+                console.error('Error adding device:', error);
+                errorEl.textContent = `Błąd: ${error.message}`;
+                errorEl.style.display = 'block';
+                updateStatus('Błąd dodawania urządzenia', 'error');
+            }
         }
         
         /**

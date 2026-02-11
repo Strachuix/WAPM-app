@@ -25,6 +25,12 @@ header('Expires: 0');
 // Obsługa CORS
 handleCORS();
 
+// Dla POST requests, obsłuż preflight
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 /**
  * Obsługuje Cross-Origin Resource Sharing
  * 
@@ -36,7 +42,7 @@ function handleCORS() {
     
     if (in_array($origin, $allowedOrigins)) {
         header("Access-Control-Allow-Origin: $origin");
-        header('Access-Control-Allow-Methods: GET, OPTIONS');
+        header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
         header('Access-Control-Allow-Headers: Content-Type');
         header('Access-Control-Max-Age: 3600');
     }
@@ -215,6 +221,100 @@ function convertToLocalTime($utcTime) {
         // Jeśli konwersja się nie uda, zwróć oryginalny czas
         return $utcTime;
     }
+}
+
+/**
+ * Dodaje nowe urządzenie do Traccar
+ * 
+ * @param array $data Dane urządzenia (name, category, description, groupId)
+ * @return array ['success' => bool, 'device' => array|null, 'message' => string]
+ */
+function addDevice($data) {
+    $name = $data['name'] ?? '';
+    $category = $data['category'] ?? 'mobile';
+    $description = $data['description'] ?? '';
+    $groupId = $data['groupId'] ?? null;
+    
+    // Generuj uniqueId na podstawie kategorii
+    $uniqueId = generateUniqueId($category);
+    
+    // Przygotuj dane urządzenia dla Traccar
+    $deviceData = [
+        'name' => $name,
+        'uniqueId' => $uniqueId,
+        'category' => $category,
+        'attributes' => [
+            'description' => $description
+        ]
+    ];
+    
+    if ($groupId) {
+        $deviceData['groupId'] = (int)$groupId;
+    }
+    
+    $devicesUrl = str_replace('/positions', '/devices', TRACCAR_URL);
+    
+    // Dodaj urządzenie przez API Traccar
+    if (function_exists('curl_init')) {
+        $ch = curl_init($devicesUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($deviceData),
+            CURLOPT_TIMEOUT => CURL_TIMEOUT,
+            CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
+            CURLOPT_USERPWD => TRACCAR_USER . ':' . TRACCAR_PASSWORD,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Accept: application/json'
+            ]
+        ]);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+        
+        if ($response === false || $httpCode !== 200) {
+            return [
+                'success' => false,
+                'message' => "Traccar API error: $error (HTTP $httpCode)"
+            ];
+        }
+        
+        $device = json_decode($response, true);
+        return [
+            'success' => true,
+            'device' => $device
+        ];
+    }
+    
+    return [
+        'success' => false,
+        'message' => 'cURL not available'
+    ];
+}
+
+/**
+ * Generuje unikalny uniqueId na podstawie kategorii
+ * 
+ * @param string $category Kategoria urządzenia
+ * @return string uniqueId
+ */
+function generateUniqueId($category) {
+    // Prefiks kategorii
+    $prefix = match($category) {
+        'ambulance' => '2',
+        'pickup' => '3',
+        'person' => '1',
+        'mobile' => '4',
+        default => '4'
+    };
+    
+    // Generuj losowy 9-cyfrowy numer
+    $random = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+    
+    return $prefix . $random;
 }
 
 /**
@@ -444,29 +544,49 @@ function sendError($message, $code = 400) {
 
 // === GŁÓWNA LOGIKA ===
 
-// Sprawdź metodę HTTP
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    sendError('Method not allowed', 405);
-}
-
 // Weryfikuj hasło dostępu
-$password = $_GET['pass'] ?? '';
+$password = $_REQUEST['pass'] ?? '';
 if (!verifyPassword($password)) {
     error_log('Unauthorized access attempt from ' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
     sendError('Forbidden - Invalid password', 403);
 }
 
-// Pobierz dane z Traccar
-$result = getAllDevicesData();
-
-if ($result === false || $result === null) {
-    sendError('Unable to fetch data from Traccar server', 502);
+// Obsługa różnych metod HTTP
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Pobierz listę urządzeń
+    $result = getAllDevicesData();
+    
+    if ($result === false || $result === null) {
+        sendError('Unable to fetch data from Traccar server', 502);
+    }
+    
+    sendResponse([
+        'success' => true,
+        'count' => count($result),
+        'timestamp' => date('c'),
+        'data' => $result
+    ]);
+    
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Dodaj nowe urządzenie
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$input || !isset($input['name']) || !isset($input['category'])) {
+        sendError('Missing required fields: name, category', 400);
+    }
+    
+    $result = addDevice($input);
+    
+    if ($result['success']) {
+        sendResponse([
+            'success' => true,
+            'message' => 'Device added successfully',
+            'device' => $result['device']
+        ]);
+    } else {
+        sendError($result['message'] ?? 'Failed to add device', 500);
+    }
+    
+} else {
+    sendError('Method not allowed', 405);
 }
-
-// Zwróć dane
-sendResponse([
-    'success' => true,
-    'count' => count($result),
-    'timestamp' => date('c'),
-    'data' => $result
-]);

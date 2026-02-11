@@ -465,6 +465,231 @@
             }
         }
         
+        /* Sidebar */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 9999;
+        }
+        
+        .sidebar-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -350px;
+            width: 350px;
+            height: 100vh;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            transition: left 0.3s ease;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar.show {
+            left: 0;
+        }
+        
+        .sidebar-header {
+            padding: 1.5rem;
+            background: #2c3e50;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sidebar-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        
+        .sidebar-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+        
+        .sidebar-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        .device-item {
+            padding: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .device-item:hover {
+            border-color: #3498db;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+        }
+        
+        .device-item-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .device-item-icon {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .device-item-name {
+            font-weight: 600;
+            font-size: 1rem;
+            flex: 1;
+        }
+        
+        .device-item-status {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        
+        .device-item-status.online {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .device-item-status.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .device-item-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        
+        .device-item-actions button {
+            flex: 1;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.75rem;
+        }
+        
+        .btn-icon {
+            background: transparent;
+            color: white;
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+        
+        .btn-icon:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .btn-small {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+        }
+        
+        /* Config Modal */
+        .config-section {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .config-section h3 {
+            margin: 0 0 1rem 0;
+            color: #3498db;
+            font-size: 1.1rem;
+        }
+        
+        .config-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .config-item label {
+            font-weight: 600;
+            min-width: 150px;
+            color: #555;
+        }
+        
+        .config-item input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            background: white;
+        }
+        
+        .config-item span {
+            flex: 1;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .instructions-box {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+            line-height: 1.6;
+        }
+        
+        .instructions-box ol {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+        }
+        
+        .instructions-box li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .instructions-box code {
+            background: #f8f9fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
         /* Responsive */
         @media (max-width: 600px) {
             #header h2 {
@@ -500,6 +725,7 @@
     <!-- Main App -->
     <div id="app">
         <div id="header">
+            <button class="btn btn-icon" id="menuBtn" title="Lista urządzeń">☰</button>
             <h2>🌍 WAPM GPS</h2>
             <input type="text" id="search" placeholder="Szukaj urządzenia...">
             <button class="btn btn-primary" id="addDeviceBtn">➕ Dodaj urządzenie</button>
@@ -533,6 +759,20 @@
         </div>
     </div>
     
+    <!-- Sidebar Overlay -->
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    
+    <!-- Sidebar: Lista urządzeń -->
+    <div id="devicesSidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h3>📋 Lista urządzeń</h3>
+            <button class="sidebar-close" id="closeSidebar">&times;</button>
+        </div>
+        <div class="sidebar-content">
+            <div id="devicesList"></div>
+        </div>
+    </div>
+
     <!-- Modal: Dodaj urządzenie -->
     <div id="addDeviceModal" class="modal">
         <div class="modal-content">
@@ -566,6 +806,12 @@
                     <small>Jeśli masz skonfigurowane grupy w Traccar, wpisz nazwę</small>
                 </div>
                 
+                <div class="form-group">
+                    <label for="adminPassword">Hasło administratora *</label>
+                    <input type="password" id="adminPassword" required placeholder="Hasło administratora">
+                    <small>⚠️ Wymagane do autoryzacji dodawania urządzeń</small>
+                </div>
+                
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" id="cancelAddDevice">Anuluj</button>
                     <button type="submit" class="btn btn-primary">✅ Dodaj urządzenie</button>
@@ -574,6 +820,56 @@
                 <div id="addDeviceError" class="error" style="display: none;"></div>
                 <div id="addDeviceSuccess" class="success" style="display: none;"></div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal: Konfiguracja urządzenia -->
+    <div id="configModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeConfigModal">&times;</span>
+            <h2>⚙️ Konfiguracja urządzenia</h2>
+            
+            <div class="config-section">
+                <label>Hasło administratora *</label>
+                <input type="password" id="configAdminPassword" placeholder="Wprowadź hasło administratora">
+                <button class="btn btn-primary" id="unlockConfigBtn">🔓 Pokaż konfigurację</button>
+            </div>
+            
+            <div id="configData" style="display: none;">
+                <div class="config-section">
+                    <h3>📱 Dane urządzenia</h3>
+                    <div class="config-item">
+                        <label>Nazwa:</label>
+                        <span id="configDeviceName"></span>
+                    </div>
+                    <div class="config-item">
+                        <label>Identyfikator (UniqueID):</label>
+                        <input type="text" id="configUniqueId" readonly>
+                        <button class="btn btn-small" onclick="navigator.clipboard.writeText(document.getElementById('configUniqueId').value)">📋 Kopiuj</button>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <h3>🌐 Serwer Traccar</h3>
+                    <div class="config-item">
+                        <label>Adres serwera:</label>
+                        <input type="text" id="configServerUrl" readonly value="demo.traccar.org">
+                        <button class="btn btn-small" onclick="navigator.clipboard.writeText(document.getElementById('configServerUrl').value)">📋 Kopiuj</button>
+                    </div>
+                    <div class="config-item">
+                        <label>Port (GPRS):</label>
+                        <input type="text" id="configServerPort" readonly value="5055">
+                        <button class="btn btn-small" onclick="navigator.clipboard.writeText(document.getElementById('configServerPort').value)">📋 Kopiuj</button>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <h3>📖 Instrukcje</h3>
+                    <div id="configInstructions" class="instructions-box"></div>
+                </div>
+            </div>
+            
+            <div id="configError" class="error" style="display: none;"></div>
         </div>
     </div>
 
@@ -613,7 +909,8 @@
             searchTerm: '',
             myLocationMarker: null,
             refreshInterval: null,
-            usingCache: false
+            usingCache: false,
+            selectedDeviceForConfig: null
         };
         
         // === KATEGORIE IKON ===
@@ -801,6 +1098,20 @@
                     closeAddDeviceModal();
                 }
             });
+            
+            // Devices Sidebar
+            document.getElementById('menuBtn').addEventListener('click', openDevicesSidebar);
+            document.getElementById('closeSidebar').addEventListener('click', closeDevicesSidebar);
+            document.getElementById('sidebarOverlay').addEventListener('click', closeDevicesSidebar);
+            
+            // Config Modal
+            document.getElementById('closeConfigModal').addEventListener('click', closeConfigModal);
+            document.getElementById('unlockConfigBtn').addEventListener('click', unlockConfig);
+            document.getElementById('configModal').addEventListener('click', (e) => {
+                if (e.target.id === 'configModal') {
+                    closeConfigModal();
+                }
+            });
         }
         
         /**
@@ -874,6 +1185,11 @@
                     state.usingCache = false;
                     updateMarkers();
                     updateStatus(`Aktywne: ${result.count} urządzeń`, 'success');
+                    
+                    // Zaktualizuj listę urządzeń w sidebarze jeśli jest otwarty
+                    if (document.getElementById('devicesSidebar').classList.contains('show')) {
+                        renderDevicesList();
+                    }
                 } else {
                     throw new Error(result.message || 'Błąd danych');
                 }
@@ -897,6 +1213,11 @@
                         state.usingCache = true;
                         updateMarkers();
                         updateStatus(`⚠️ Brak połączenia - dane z cache (${cacheAgeMinutes} min temu, ${offlineDevices.length} offline)`, 'warning');
+                        
+                        // Zaktualizuj listę urządzeń w sidebarze jeśli jest otwarty
+                        if (document.getElementById('devicesSidebar').classList.contains('show')) {
+                            renderDevicesList();
+                        }
                     } catch (e) {
                         updateStatus('Błąd połączenia', 'error');
                     }
@@ -1108,6 +1429,7 @@
             const category = document.getElementById('deviceCategory').value;
             const description = document.getElementById('deviceDescription').value.trim();
             const groupName = document.getElementById('deviceGroup').value.trim();
+            const adminPassword = document.getElementById('adminPassword').value;
             
             const errorEl = document.getElementById('addDeviceError');
             const successEl = document.getElementById('addDeviceSuccess');
@@ -1115,7 +1437,7 @@
             errorEl.style.display = 'none';
             successEl.style.display = 'none';
             
-            if (!name || !category) {
+            if (!name || !category || !adminPassword) {
                 errorEl.textContent = 'Uzupełnij wymagane pola';
                 errorEl.style.display = 'block';
                 return;
@@ -1125,7 +1447,8 @@
             const deviceData = {
                 name,
                 category,
-                description
+                description,
+                admin_password: adminPassword
             };
             
             // Jeśli podano grupę, spróbuj znaleźć jej ID
@@ -1159,14 +1482,242 @@
                     
                     updateStatus('Urządzenie dodane pomyślnie', 'success');
                 } else {
+                    // Obsługa błędów
+                    if (response.status === 403) {
+                        throw new Error('Nieprawidłowe hasło administratora');
+                    }
                     throw new Error(result.message || 'Błąd dodawania urządzenia');
                 }
             } catch (error) {
                 console.error('Error adding device:', error);
-                errorEl.textContent = `Błąd: ${error.message}`;
+                errorEl.textContent = `❌ ${error.message}`;
                 errorEl.style.display = 'block';
                 updateStatus('Błąd dodawania urządzenia', 'error');
             }
+        }
+        
+        /**
+         * Otwiera sidebar z listą urządzeń
+         */
+        function openDevicesSidebar() {
+            const sidebar = document.getElementById('devicesSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.add('show');
+            overlay.classList.add('show');
+            renderDevicesList();
+        }
+        
+        /**
+         * Zamyka sidebar z listą urządzeń
+         */
+        function closeDevicesSidebar() {
+            const sidebar = document.getElementById('devicesSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.remove('show');
+            overlay.classList.remove('show');
+        }
+        
+        /**
+         * Renderuje listę urządzeń w sidebarze
+         */
+        function renderDevicesList() {
+            const container = document.getElementById('devicesList');
+            
+            if (!state.devices || state.devices.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">Brak urządzeń</p>';
+                return;
+            }
+            
+            container.innerHTML = state.devices.map(device => {
+                const config = CATEGORY_CONFIG[device.category] || CATEGORY_CONFIG.mobile;
+                const isOffline = new Date() - new Date(device.lastUpdate) > 5 * 60 * 1000;
+                const statusClass = isOffline ? 'offline' : 'online';
+                const statusText = isOffline ? 'Offline' : 'Online';
+                
+                return `
+                    <div class="device-item">
+                        <div class="device-item-header">
+                            <img src="${config.icon}" class="device-item-icon" alt="${config.name}">
+                            <span class="device-item-name">${device.name}</span>
+                            <span class="device-item-status ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="device-item-actions">
+                            <button class="btn btn-primary" onclick="centerMapOnDevice(${device.deviceId})">
+                                🗺️ Pokaż na mapie
+                            </button>
+                            <button class="btn btn-success" onclick="openConfigModal(${device.deviceId})">
+                                ⚙️ Konfiguracja
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        /**
+         * Centruje mapę na urządzeniu
+         * @param {number} deviceId - ID urządzenia
+         */
+        function centerMapOnDevice(deviceId) {
+            const device = state.devices.find(d => d.deviceId === deviceId);
+            if (device && device.lat && device.lon) {
+                state.map.setView([device.lat, device.lon], 16);
+                
+                // Otwórz popup markera
+                if (state.markers[deviceId]) {
+                    state.markers[deviceId].openPopup();
+                }
+                
+                closeDevicesSidebar();
+                updateStatus(`Pokazano urządzenie: ${device.name}`, 'success');
+            }
+        }
+        
+        /**
+         * Otwiera modal konfiguracji urządzenia
+         * @param {number} deviceId - ID urządzenia
+         */
+        function openConfigModal(deviceId) {
+            const device = state.devices.find(d => d.deviceId === deviceId);
+            if (!device) return;
+            
+            state.selectedDeviceForConfig = device;
+            
+            const modal = document.getElementById('configModal');
+            modal.classList.add('show');
+            
+            // Resetuj formularz
+            document.getElementById('configAdminPassword').value = '';
+            document.getElementById('configData').style.display = 'none';
+            document.getElementById('configError').style.display = 'none';
+            
+            closeDevicesSidebar();
+        }
+        
+        /**
+         * Zamyka modal konfiguracji
+         */
+        function closeConfigModal() {
+            const modal = document.getElementById('configModal');
+            modal.classList.remove('show');
+            state.selectedDeviceForConfig = null;
+        }
+        
+        /**
+         * Odblokowuje widok konfiguracji po podaniu hasła admina
+         */
+        async function unlockConfig() {
+            const adminPassword = document.getElementById('configAdminPassword').value;
+            const errorEl = document.getElementById('configError');
+            
+            if (!adminPassword) {
+                errorEl.textContent = '❌ Wprowadź hasło administratora';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            if (!state.selectedDeviceForConfig) {
+                errorEl.textContent = '❌ Nie wybrano urządzenia';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            // Sprawdź hasło poprzez backend
+            try {
+                const response = await fetch(`${CONFIG.API_URL}?pass=${CONFIG.API_PASSWORD}&action=verify-admin&admin_password=${encodeURIComponent(adminPassword)}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    errorEl.style.display = 'none';
+                    showConfigData(state.selectedDeviceForConfig);
+                } else {
+                    throw new Error(result.message || 'Nieprawidłowe hasło');
+                }
+            } catch (error) {
+                console.error('Config unlock error:', error);
+                errorEl.textContent = `❌ ${error.message}`;
+                errorEl.style.display = 'block';
+            }
+        }
+        
+        /**
+         * Pokazuje dane konfiguracyjne urządzenia
+         * @param {Object} device - Dane urządzenia
+         */
+        function showConfigData(device) {
+            const configData = document.getElementById('configData');
+            configData.style.display = 'block';
+            
+            // Wypełnij dane
+            document.getElementById('configDeviceName').textContent = device.name;
+            document.getElementById('configUniqueId').value = device.uniqueId;
+            
+            // Wyciągnij domenę z Traccar URL (demo.traccar.org)
+            const serverUrl = 'demo.traccar.org';
+            document.getElementById('configServerUrl').value = serverUrl;
+            
+            // Instrukcje dla różnych kategorii
+            const instructions = getConfigInstructions(device.category, device.uniqueId, serverUrl);
+            document.getElementById('configInstructions').innerHTML = instructions;
+        }
+        
+        /**
+         * Generuje instrukcje konfiguracji dla urządzenia
+         * @param {string} category - Kategoria urządzenia
+         * @param {string} uniqueId - UniqueID urządzenia
+         * @param {string} serverUrl - URL serwera Traccar
+         * @returns {string} HTML z instrukcjami
+         */
+        function getConfigInstructions(category, uniqueId, serverUrl) {
+            const baseInstructions = `
+                <p><strong>Podstawowe ustawienia:</strong></p>
+                <ol>
+                    <li>Adres serwera: <code>${serverUrl}</code></li>
+                    <li>Port: <code>5055</code></li>
+                    <li>Identyfikator urządzenia: <code>${uniqueId}</code></li>
+                </ol>
+            `;
+            
+            const categoryInstructions = {
+                ambulance: `
+                    <p><strong>🚑 Karetka - Instrukcje dla GPS tracker:</strong></p>
+                    <ol>
+                        <li>Zainstaluj aplikację GPS do trackowania</li>
+                        <li>W ustawieniach wybierz protokół: <code>osmand</code></li>
+                        <li>Wprowadź powyższe dane serwera</li>
+                        <li>Ustaw częstotliwość wysyłania: co 30-60 sekund</li>
+                    </ol>
+                `,
+                pickup: `
+                    <p><strong>🚙 SZOP - Instrukcje dla lokalizatora GPS:</strong></p>
+                    <ol>
+                        <li>Podłącz lokalizator do zasilania pojazdu</li>
+                        <li>Wyślij SMS konfiguracyjny: <code>SERVER,${serverUrl},5055#</code></li>
+                        <li>Wyślij SMS z ID: <code>ID,${uniqueId}#</code></li>
+                        <li>Potwierdź: <code>APN,internet#</code></li>
+                    </ol>
+                `,
+                person: `
+                    <p><strong>🚶 Grupa - Instrukcje dla aplikacji mobilnej:</strong></p>
+                    <ol>
+                        <li>Zainstaluj aplikację Traccar Client (Android/iOS)</li>
+                        <li>Wprowadź adres: <code>http://${serverUrl}:5055</code></li>
+                        <li>Identyfikator: <code>${uniqueId}</code></li>
+                        <li>Włącz śledzenie w tle</li>
+                    </ol>
+                `,
+                mobile: `
+                    <p><strong>📱 Telefon - Instrukcje dla smartfona:</strong></p>
+                    <ol>
+                        <li>Zainstaluj aplikację Traccar Client</li>
+                        <li>Adres serwera: <code>http://${serverUrl}:5055</code></li>
+                        <li>Identyfikator: <code>${uniqueId}</code></li>
+                        <li>Włącz lokalizację GPS w telefonie</li>
+                    </ol>
+                `
+            };
+            
+            return baseInstructions + (categoryInstructions[category] || categoryInstructions.mobile);
         }
         
         /**

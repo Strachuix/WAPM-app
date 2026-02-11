@@ -80,6 +80,9 @@ define('TRACCAR_PASSWORD', env('TRACCAR_PASSWORD'));
 // Hasło dostępu do API (SHA256 hash)
 define('ACCESS_PASSWORD_HASH', hash('sha256', env('ACCESS_PASSWORD', 'secure123')));
 
+// Hasło administratora do operacji modyfikujących (SHA256 hash)
+define('ADMIN_PASSWORD_HASH', hash('sha256', env('ADMIN_PASSWORD', 'admin456')));
+
 // Czas timeout dla połączeń (sekundy)
 define('CURL_TIMEOUT', (int)env('CURL_TIMEOUT', 30));
 

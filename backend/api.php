@@ -586,28 +586,57 @@ if (!verifyPassword($password)) {
     sendError('Forbidden - Invalid password', 403);
 }
 
-// Obsługa różnych metod HTTP
+// Sprawdź akcję (domyślnie: lista urządzeń)
+$action = $_REQUEST['action'] ?? 'list';
+
+// Obsługa różnych akcji
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Pobierz listę urządzeń
-    $result = getAllDevicesData();
     
-    if ($result === false || $result === null) {
-        sendError('Unable to fetch data from Traccar server', 502);
+    if ($action === 'verify-admin') {
+        // Weryfikuj hasło administratora
+        $adminPassword = $_REQUEST['admin_password'] ?? '';
+        $adminPasswordHash = hash('sha256', $adminPassword);
+        
+        if ($adminPasswordHash === ADMIN_PASSWORD_HASH) {
+            sendResponse([
+                'success' => true,
+                'message' => 'Admin password verified'
+            ]);
+        } else {
+            error_log('Invalid admin password attempt from ' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+            sendError('Invalid admin password', 403);
+        }
+    } else {
+        // Domyślnie: pobierz listę urządzeń
+        $result = getAllDevicesData();
+        
+        if ($result === false || $result === null) {
+            sendError('Unable to fetch data from Traccar server', 502);
+        }
+        
+        sendResponse([
+            'success' => true,
+            'count' => count($result),
+            'timestamp' => date('c'),
+            'data' => $result
+        ]);
     }
     
-    sendResponse([
-        'success' => true,
-        'count' => count($result),
-        'timestamp' => date('c'),
-        'data' => $result
-    ]);
-    
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Dodaj nowe urządzenie
+    // Dodaj nowe urządzenie - wymaga hasła administratora
     $input = json_decode(file_get_contents('php://input'), true);
     
     if (!$input || !isset($input['name']) || !isset($input['category'])) {
         sendError('Missing required fields: name, category', 400);
+    }
+    
+    // Sprawdź hasło administratora
+    $adminPassword = $input['admin_password'] ?? '';
+    $adminPasswordHash = hash('sha256', $adminPassword);
+    
+    if ($adminPasswordHash !== ADMIN_PASSWORD_HASH) {
+        error_log('Unauthorized device add attempt from ' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+        sendError('Forbidden - Invalid admin password', 403);
     }
     
     $result = addDevice($input);

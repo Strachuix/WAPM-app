@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["php82", "php82Packages.composer", "nginx"]
+
+[phases.build]
+cmds = ["echo 'No build step required for vanilla PHP'"]
+
+[start]
+cmd = "nginx -c /app/nginx.conf && php-fpm"

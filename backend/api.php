@@ -238,12 +238,12 @@ function addDevice($data) {
     // Generuj uniqueId na podstawie kategorii
     $uniqueId = generateUniqueId($category);
     
-    // Przygotuj dane urządzenia dla Traccar
+    // Przygotuj dane urządzenia dla Traccar (bez pola category - używamy uniqueId do rozpoznawania)
     $deviceData = [
         'name' => $name,
         'uniqueId' => $uniqueId,
-        'category' => $category,
         'attributes' => [
+            'customCategory' => $category,
             'description' => $description
         ]
     ];
@@ -275,10 +275,25 @@ function addDevice($data) {
         $error = curl_error($ch);
         curl_close($ch);
         
-        if ($response === false || $httpCode !== 200) {
+        if ($response === false) {
             return [
                 'success' => false,
-                'message' => "Traccar API error: $error (HTTP $httpCode)"
+                'message' => "cURL error: $error"
+            ];
+        }
+        
+        if ($httpCode !== 200) {
+            $responseData = json_decode($response, true);
+            $traccarError = $responseData['message'] ?? $response;
+            error_log("Traccar API error (HTTP $httpCode): $traccarError");
+            return [
+                'success' => false,
+                'message' => "Traccar API error: $traccarError (HTTP $httpCode)",
+                'debug' => [
+                    'httpCode' => $httpCode,
+                    'response' => $response,
+                    'sentData' => $deviceData
+                ]
             ];
         }
         

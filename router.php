@@ -50,12 +50,39 @@ if ($uri === '/service-worker.js') {
     }
 }
 
-// Frontend routing - serve index.html
-$file = __DIR__ . '/frontend' . $uri;
+// Manifest.json
+if ($uri === '/manifest.json') {
+    $file = __DIR__ . '/frontend/manifest.json';
+    if (file_exists($file)) {
+        header('Content-Type: application/json');
+        readfile($file);
+        return true;
+    }
+}
 
-// If it's a file and exists, serve it
-if (is_file($file)) {
-    return false; // Let PHP built-in server handle it
+// Frontend static files
+$frontendFile = __DIR__ . '/frontend' . $uri;
+if (is_file($frontendFile)) {
+    $ext = pathinfo($frontendFile, PATHINFO_EXTENSION);
+    $mimeTypes = [
+        'html' => 'text/html',
+        'css' => 'text/css',
+        'js' => 'application/javascript',
+        'json' => 'application/json',
+        'png' => 'image/png',
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'gif' => 'image/gif',
+        'svg' => 'image/svg+xml',
+        'ico' => 'image/x-icon',
+    ];
+    
+    if (isset($mimeTypes[$ext])) {
+        header('Content-Type: ' . $mimeTypes[$ext]);
+    }
+    
+    readfile($frontendFile);
+    return true;
 }
 
 // Otherwise serve index.html (SPA routing)

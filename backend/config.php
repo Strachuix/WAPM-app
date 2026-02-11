@@ -15,8 +15,16 @@
  * @return void
  */
 function loadEnv($path) {
+    // Jeśli plik .env nie istnieje (np. na Railway), użyj zmiennych środowiskowych
     if (!file_exists($path)) {
-        die('Error: .env file not found. Copy .env.example to .env and configure it.');
+        // Sprawdź czy zmienne środowiskowe są ustawione (Railway, Docker, itp.)
+        if (getenv('TRACCAR_URL') !== false) {
+            // Zmienne środowiskowe są dostępne, kontynuuj
+            return;
+        }
+        
+        // Brak pliku .env i brak zmiennych środowiskowych
+        die('Error: .env file not found and environment variables not set. Copy .env.example to .env and configure it.');
     }
     
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);

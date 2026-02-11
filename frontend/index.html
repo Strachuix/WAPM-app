@@ -965,17 +965,22 @@
          * Rejestruje Service Worker
          */
         function registerServiceWorker() {
-            // TYMCZASOWO WYŁĄCZONE - włącz na produkcji
-            console.log('Service Worker wyłączony dla developmentu');
+            // Wyłączony tylko na localhost, włączony na produkcji
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
             
-            // Wyrejestruj wszystkie istniejące service workery w trybie dev
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(registrations => {
-                    registrations.forEach(reg => reg.unregister());
-                });
+            if (isLocalhost) {
+                console.log('Service Worker wyłączony dla developmentu (localhost)');
+                
+                // Wyrejestruj wszystkie istniejące service workery w trybie dev
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(registrations => {
+                        registrations.forEach(reg => reg.unregister());
+                    });
+                }
+                return;
             }
-            return;
             
+            console.log('Service Worker włączony dla produkcji');
             if ('serviceWorker' in navigator) {
                 // Ścieżka względna do service-worker.js
                 const swPath = window.location.pathname.includes('/frontend/') 

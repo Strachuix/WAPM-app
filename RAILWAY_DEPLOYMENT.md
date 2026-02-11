@@ -33,7 +33,10 @@ CURL_TIMEOUT=30
 TIMEZONE=Europe/Warsaw
 ```
 
-**WAŻNE:** Zaktualizuj `ALLOWED_ORIGINS` o domenę Railway (znajdziesz ją w Settings → Domains)
+**WAŻNE:** 
+- Zaktualizuj `ALLOWED_ORIGINS` o domenę Railway (znajdziesz ją w Settings → Domains)
+- Na Railway NIE MUSISZ tworzyć pliku `backend/.env` - aplikacja automatycznie użyje zmiennych środowiskowych Railway
+- Dla lokalnego developmentu używaj `backend/.env` (nie commituj go do Git!)
 
 ### 4. Deploy
 
@@ -50,6 +53,9 @@ Railway automatycznie:
 1. Otwórz domenę Railway (np. `https://wapm-production.up.railway.app`)
 2. Zaloguj się używając hasła z `ACCESS_PASSWORD`
 3. Sprawdź czy urządzenia są widoczne na mapie
+4. W konsoli przeglądarki powinieneś zobaczyć:
+   - "Service Worker włączony dla produkcji" (zamiast "wyłączony dla developmentu")
+   - "Service Worker registered" jeśli PWA działa poprawnie
 
 ### 6. Custom Domain (opcjonalnie)
 
@@ -79,6 +85,15 @@ W Railway Dashboard → Settings → Domains:
 **Problem:** Ikony SVG nie ładują się
 - Upewnij się że router.php poprawnie obsługuje /frontend/assets/
 - Sprawdź MIME types w router.php
+
+**Problem:** manifest.json 404
+- router.php teraz automatycznie serwuje manifest.json z /frontend/
+- Sprawdź czy plik frontend/manifest.json istnieje w repozytorium
+
+**Problem:** Service Worker nie działa
+- Na localhost: Service Worker jest automatycznie wyłączony
+- Na produkcji (Railway): Service Worker jest automatycznie włączony
+- Sprawdź w konsoli czy widzisz "Service Worker włączony dla produkcji"
 
 ### 8. Monitorowanie
 

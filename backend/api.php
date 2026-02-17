@@ -75,22 +75,9 @@ function verifyPassword($password) {
  * @return array|false Dane z API lub false w przypadku błędu
  */
 function fetchDataCURL() {
-    $ch = curl_init(TRACCAR_URL);
-    
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => CURL_TIMEOUT,
-        CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
-        CURLOPT_USERPWD => TRACCAR_USER . ':' . TRACCAR_PASSWORD,
-        CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_SSL_VERIFYHOST => 2,
-        CURLOPT_FOLLOWLOCATION => false,
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/json',
-            'User-Agent: WAPM-GPS-Tracker/1.0'
-        ]
-    ]);
-    
+    $positionsUrl = getTraccarBase() . '/positions';
+    $ch = initTraccarCurl($positionsUrl);
+
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
@@ -123,7 +110,8 @@ function fetchDataFileGetContents() {
     ];
     
     $context = stream_context_create($options);
-    $response = @file_get_contents(TRACCAR_URL, false, $context);
+    $positionsUrl = getTraccarBase() . '/positions';
+    $response = @file_get_contents($positionsUrl, false, $context);
     
     if ($response === false) {
         error_log("file_get_contents Error");
@@ -131,6 +119,48 @@ function fetchDataFileGetContents() {
     }
     
     return json_decode($response, true);
+}
+
+/**
+ * Inicjalizuje wspólne opcje cURL dla Traccar
+ *
+ * @param string $url
+ * @param array $extraOptions dodatkowe opcje do ustawienia
+ * @return resource cURL handle
+ */
+function initTraccarCurl($url, $extraOptions = []) {
+    $ch = curl_init($url);
+
+    $baseOptions = [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => CURL_TIMEOUT,
+        CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
+        CURLOPT_USERPWD => TRACCAR_USER . ':' . TRACCAR_PASSWORD,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
+        CURLOPT_USERAGENT => 'WAPM-GPS-Tracker/1.0',
+    ];
+
+    $options = $extraOptions + $baseOptions;
+    curl_setopt_array($ch, $options);
+    return $ch;
+}
+
+/**
+ * Zwraca znormalizowany base URL Traccar i zapewnia, że zawiera '/api'
+ * Zwraca URL bez końcowego slasha, np. 'https://host/api'
+ *
+ * @return string
+ */
+function getTraccarBase() {
+    $base = rtrim(TRACCAR_URL, '/');
+
+    // Jeśli '/api' nie występuje w URL, dopisz je
+    if (stripos($base, '/api') === false) {
+        $base .= '/api';
+    }
+
+    return rtrim($base, '/');
 }
 
 /**
@@ -158,28 +188,20 @@ function fetchTraccarData() {
  * @return array|false Dane z API lub false w przypadku błędu
  */
 function fetchFromTraccar($endpoint) {
-    $url = rtrim(TRACCAR_URL, '/') . $endpoint;
-    
+    $url = getTraccarBase() . '/' . ltrim($endpoint, '/');
+
     // Próbuj cURL
     if (function_exists('curl_init')) {
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => CURL_TIMEOUT,
-            CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
-            CURLOPT_USERPWD => TRACCAR_USER . ':' . TRACCAR_PASSWORD,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
+        $ch = initTraccarCurl($url, [
             CURLOPT_HTTPHEADER => [
-                'Accept: application/json',
-                'User-Agent: WAPM-GPS-Tracker/1.0'
+                'Accept: application/json'
             ]
         ]);
-        
+
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-        
+
         if ($response !== false && $httpCode === 200) {
             return json_decode($response, true);
         }
@@ -268,7 +290,7 @@ function addDevice($data) {
         $deviceData['groupId'] = (int)$groupId;
     }
     
-    $devicesUrl = rtrim(TRACCAR_URL, '/') . '/devices';
+    $devicesUrl = getTraccarBase() . '/devices';
     
     // Dodaj urządzenie przez API Traccar
     if (function_exists('curl_init')) {
@@ -462,35 +484,23 @@ function getAllDevicesData() {
  * @return array Tablica grup (groupId => groupName)
  */
 function getGroups() {
-    $groups = null;
-    
+    static $groups = null;
+
     if ($groups !== null) {
         return $groups;
     }
-    
+
     $groups = [];
-    $groupsUrl = rtrim(TRACCAR_URL, '/') . '/groups';
+    $groupsUrl = getTraccarBase() . '/groups';
     
     // Próbuj cURL
     if (function_exists('curl_init')) {
-        $ch = curl_init($groupsUrl);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 10,
-            CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
-            CURLOPT_USERPWD => TRACCAR_USER . ':' . TRACCAR_PASSWORD,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_HTTPHEADER => [
-                'Accept: application/json',
-                'User-Agent: WAPM-GPS-Tracker/1.0'
-            ]
-        ]);
-        
+        $ch = initTraccarCurl($groupsUrl, [CURLOPT_TIMEOUT => 10, CURLOPT_HTTPHEADER => ['Accept: application/json']]);
+
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-        
+
         if ($response && $httpCode === 200) {
             $groupsData = json_decode($response, true);
             if (is_array($groupsData)) {
@@ -517,19 +527,25 @@ function getDeviceInfo($deviceId) {
     if (isset($cache[$deviceId])) {
         return $cache[$deviceId];
     }
-    
-    $devicesUrl = rtrim(TRACCAR_URL, '/') . '/devices';
+                // Zakoduj dane do JSON z prawidłowym UTF-8
+                $jsonData = json_encode($deviceData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+                $ch = initTraccarCurl($devicesUrl, [
+                    CURLOPT_POST => true,
+                    CURLOPT_POSTFIELDS => $jsonData,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_MAXREDIRS => 5,
+                    CURLOPT_HTTPHEADER => [
+                        'Content-Type: application/json; charset=utf-8',
+                        'Accept: application/json'
+                    ]
+                ]);
+    $devicesUrl = getTraccarBase() . '/devices';
     $groups = getGroups();
     
     // Próbuj cURL
     if (function_exists('curl_init')) {
-        $ch = curl_init($devicesUrl);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 10,
-            CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
-            CURLOPT_USERPWD => TRACCAR_USER . ':' . TRACCAR_PASSWORD,
-        ]);
+        $ch = initTraccarCurl($devicesUrl, [CURLOPT_TIMEOUT => 10]);
         $response = curl_exec($ch);
         curl_close($ch);
         

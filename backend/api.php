@@ -158,7 +158,7 @@ function fetchTraccarData() {
  * @return array|false Dane z API lub false w przypadku błędu
  */
 function fetchFromTraccar($endpoint) {
-    $url = str_replace('/positions', $endpoint, TRACCAR_URL);
+    $url = rtrim(TRACCAR_URL, '/') . $endpoint;
     
     // Próbuj cURL
     if (function_exists('curl_init')) {
@@ -268,7 +268,7 @@ function addDevice($data) {
         $deviceData['groupId'] = (int)$groupId;
     }
     
-    $devicesUrl = str_replace('/positions', '/devices', TRACCAR_URL);
+    $devicesUrl = rtrim(TRACCAR_URL, '/') . '/devices';
     
     // Dodaj urządzenie przez API Traccar
     if (function_exists('curl_init')) {
@@ -469,7 +469,7 @@ function getGroups() {
     }
     
     $groups = [];
-    $groupsUrl = str_replace('/positions', '/groups', TRACCAR_URL);
+    $groupsUrl = rtrim(TRACCAR_URL, '/') . '/groups';
     
     // Próbuj cURL
     if (function_exists('curl_init')) {
@@ -518,7 +518,7 @@ function getDeviceInfo($deviceId) {
         return $cache[$deviceId];
     }
     
-    $devicesUrl = str_replace('/positions', '/devices', TRACCAR_URL);
+    $devicesUrl = rtrim(TRACCAR_URL, '/') . '/devices';
     $groups = getGroups();
     
     // Próbuj cURL

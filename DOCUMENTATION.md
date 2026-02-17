@@ -216,6 +216,37 @@ W panelu Traccar:
 
 **⚠️ UWAGA:** Pole `category` musi być wpisane **dokładnie** jak w tabeli (małe litery). W przeciwnym razie urządzenie będzie miało domyślną ikonę `mobile`.
 
+### Jak przypisywana jest kategoria
+
+System przypisuje kategorię przede wszystkim na podstawie identyfikatora urządzenia (`uniqueId`) — czyli przez ID/prefix — a nie tylko przez tekstowe pole `category`.
+
+- **Kolejność źródeł wartości (priorytet):**
+  1. Prefix `uniqueId` (pierwszy znak) — używany przez backend do wywnioskowania kategorii.
+  2. Pole `category` zwrócone przez Traccar (jeśli `uniqueId` nie jest dostępne lub nie pasuje).
+  3. Wartość domyślna: `mobile`.
+
+- **Mapowanie ID (prefix → kategoria):**
+  - `1` → `person` (Grupa)
+  - `2` → `ambulance` (Karetka)
+  - `3` → `pickup` (SZOP)
+  - `4` → `mobile` (Telefon)
+
+- **Jak to działa w praktyce:**
+  - Gdy urządzenie jest dodawane przez nasze API (`backend/api.php`), generujemy `uniqueId` z prefiksem odpowiadającym kategorii (funkcja `generateUniqueId()`), np. `2XXXXXXXXX` dla `ambulance`.
+  - Backend wyciąga pierwszy znak `uniqueId` w `getCategoryFromUniqueId()` i mapuje go na jedną z czterech kategorii.
+  - Jeśli `uniqueId` nie istnieje lub pierwszy znak nie pasuje do znanych prefiksów, backend sprawdza pole `category` zwrócone przez Traccar, a w ostateczności ustawia `mobile`.
+
+- **Fallback i normalizacja:**
+  - Gdy używana jest wartość tekstowa z pola `category`, system normalizuje ją (przycięcie spacji, konwersja do małych liter) i dopuszcza tylko `ambulance`, `pickup`, `person`, `mobile`.
+  - Nieznane wartości powodują przypisanie `mobile`.
+
+- **Praktyczne wskazówki konfiguracji:**
+  - Jeśli dodajesz urządzenia przez nasze API, nie musisz ręcznie ustawiać `category` — użyj parametru `category` podczas wywołania POST, a `uniqueId` zostanie wygenerowane z odpowiednim prefiksem.
+  - Jeśli dodajesz urządzenie bezpośrednio w panelu Traccar, upewnij się, że `uniqueId` zaczyna się od odpowiedniej cyfry (1–4) lub wypełnij pole `category` tekstowo zgodnie z listą.
+  - Możesz też użyć atrybutu `customCategory` (dodawany przez API) jako dodatkowej informacji, ale to nie zastępuje mechanizmu opartego na `uniqueId`.
+
+Frontend mapuje ostateczną kategorię na ikony i kolory zgodnie z tabelą powyżej.
+
 ### 3. Dodanie Atrybutu Description
 
 Description (obsada) ustawia się w atrybutach urządzenia:

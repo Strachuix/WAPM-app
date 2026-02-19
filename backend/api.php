@@ -421,8 +421,6 @@ function getCategoryFromUniqueId($uniqueId) {
 function getAllDevicesData() {
     // Pobierz wszystkie urządzenia
     $devices = fetchFromTraccar('/devices');
-    var_dump($devices); // Debug log - sprawdź strukturę danych
-    echo "Fetched " . (is_array($devices) ? count($devices) : 0) . " devices from Traccar\n"; // Debug log
     if (!is_array($devices) || empty($devices)) {
         return [];
     }
@@ -531,19 +529,7 @@ function getDeviceInfo($deviceId) {
     if (isset($cache[$deviceId])) {
         return $cache[$deviceId];
     }
-                // Zakoduj dane do JSON z prawidłowym UTF-8
-                $jsonData = json_encode($deviceData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-                $ch = initTraccarCurl($devicesUrl, [
-                    CURLOPT_POST => true,
-                    CURLOPT_POSTFIELDS => $jsonData,
-                    CURLOPT_FOLLOWLOCATION => true,
-                    CURLOPT_MAXREDIRS => 5,
-                    CURLOPT_HTTPHEADER => [
-                        'Content-Type: application/json; charset=utf-8',
-                        'Accept: application/json'
-                    ]
-                ]);
+    
     $devicesUrl = getTraccarBase() . '/devices';
     $groups = getGroups();
     
@@ -647,6 +633,17 @@ if (!$authorized) {
 
     if ($authUser !== null && $authPw !== null) {
         if ($authUser === TRACCAR_USER && $authPw === TRACCAR_PASSWORD) {
+            $authorized = true;
+        }
+    }
+}
+
+// 3) Fallback: dopuszczamy przesłanie poświadczeń jako parametry (przydatne jeśli Authorization jest zablokowane)
+if (!$authorized) {
+    $bUser = $_REQUEST['basic_user'] ?? null;
+    $bPw = $_REQUEST['basic_pw'] ?? null;
+    if ($bUser !== null && $bPw !== null) {
+        if ($bUser === TRACCAR_USER && $bPw === TRACCAR_PASSWORD) {
             $authorized = true;
         }
     }

@@ -204,6 +204,7 @@ function fetchFromTraccar($endpoint) {
         curl_close($ch);
 
         if ($response !== false && $httpCode === 200) {
+            echo $response; // Debug log - sprawdź surową odpowiedź
             return json_decode($response, true);
         }
     }
@@ -420,6 +421,7 @@ function getCategoryFromUniqueId($uniqueId) {
 function getAllDevicesData() {
     // Pobierz wszystkie urządzenia
     $devices = fetchFromTraccar('/devices');
+    var_dump($devices); // Debug log - sprawdź strukturę danych
     echo "Fetched " . (is_array($devices) ? count($devices) : 0) . " devices from Traccar\n"; // Debug log
     if (!is_array($devices) || empty($devices)) {
         return [];

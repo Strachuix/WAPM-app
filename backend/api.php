@@ -189,7 +189,7 @@ function fetchTraccarData() {
  */
 function fetchFromTraccar($endpoint) {
     $url = getTraccarBase() . '/' . ltrim($endpoint, '/');
-    echo "Fetching from Traccar: $url\n"; // Debug log
+    // echo "Fetching from Traccar: $url\n"; // Debug log
 
     // Próbuj cURL
     if (function_exists('curl_init')) {
@@ -420,6 +420,7 @@ function getCategoryFromUniqueId($uniqueId) {
 function getAllDevicesData() {
     // Pobierz wszystkie urządzenia
     $devices = fetchFromTraccar('/devices');
+    echo "Fetched " . (is_array($devices) ? count($devices) : 0) . " devices from Traccar\n"; // Debug log
     if (!is_array($devices) || empty($devices)) {
         return [];
     }

@@ -617,9 +617,42 @@ function sendError($message, $code = 400) {
 
 // === GŁÓWNA LOGIKA ===
 
-// Weryfikuj hasło dostępu
+// Weryfikuj hasło dostępu lub pozwól na Basic auth (ułatwia curl/serwer->serwer)
 $password = $_REQUEST['pass'] ?? '';
-if (!verifyPassword($password)) {
+$authorized = false;
+
+// 1) Jeśli podano publiczny pass przez GET/POST, waliduj go
+if (!empty($password) && verifyPassword($password)) {
+    $authorized = true;
+}
+
+// 2) Jeśli brak pass, spróbuj Basic Auth (przydatne dla curl i zapytań serwer->serwer)
+if (!$authorized) {
+    $authUser = $_SERVER['PHP_AUTH_USER'] ?? null;
+    $authPw = $_SERVER['PHP_AUTH_PW'] ?? null;
+
+    // W niektórych konfiguracjach PHP zmienna PHP_AUTH_* może być pusta;
+    // sprawdź nagłówek Authorization wtedy
+    if ($authUser === null || $authPw === null) {
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '') ;
+        if ($authHeader && stripos($authHeader, 'basic ') === 0) {
+            $decoded = base64_decode(substr($authHeader, 6));
+            if ($decoded !== false && strpos($decoded, ':') !== false) {
+                [$u, $p] = explode(':', $decoded, 2);
+                $authUser = $u;
+                $authPw = $p;
+            }
+        }
+    }
+
+    if ($authUser !== null && $authPw !== null) {
+        if ($authUser === TRACCAR_USER && $authPw === TRACCAR_PASSWORD) {
+            $authorized = true;
+        }
+    }
+}
+
+if (!$authorized) {
     error_log('Unauthorized access attempt from ' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
     sendError('Forbidden - Invalid password', 403);
 }

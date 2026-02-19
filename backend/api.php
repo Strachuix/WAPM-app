@@ -189,6 +189,7 @@ function fetchTraccarData() {
  */
 function fetchFromTraccar($endpoint) {
     $url = getTraccarBase() . '/' . ltrim($endpoint, '/');
+    echo "Fetching from Traccar: $url\n"; // Debug log
 
     // Próbuj cURL
     if (function_exists('curl_init')) {

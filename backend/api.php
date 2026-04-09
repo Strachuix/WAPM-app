@@ -154,7 +154,6 @@ function initTraccarCurl($url, $extraOptions = []) {
  */
 function getTraccarBase() {
     $base = rtrim(TRACCAR_URL, '/');
-
     // Jeśli '/api' nie występuje w URL, dopisz je
     if (stripos($base, '/api') === false) {
         $base .= '/api';
@@ -204,7 +203,9 @@ function fetchFromTraccar($endpoint) {
         curl_close($ch);
 
         if ($response !== false && $httpCode === 200) {
-            echo $response; // Debug log - sprawdź surową odpowiedź
+            // echo $response; // Debug log - sprawdź surową odpowiedź
+            //dodaj adres url do loga
+            error_log("Successful cURL fetch from $url (HTTP $httpCode)");
             return json_decode($response, true);
         }
     }

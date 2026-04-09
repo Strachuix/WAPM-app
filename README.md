@@ -15,7 +15,7 @@ nano .env  # lub inny edytor
 
 Edytuj `backend/.env`:
 ```bash
-TRACCAR_URL=https://twoj-serwer-traccar.com/api/positions
+TRACCAR_URL=https://twoj-serwer-traccar.com/api
 TRACCAR_USER=admin
 TRACCAR_PASSWORD=twoje_haslo
 ACCESS_PASSWORD=NOWE_HASLO
